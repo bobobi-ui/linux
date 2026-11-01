@@ -1,0 +1,621 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Linux 隨機練習</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: one centered column. Setup screen, then one question card at a time, then a review list.
+   Palette borrows Ubuntu's aubergine and orange; mono face is used for commands and labels. */
+:root {
+  --bg: #f3f0f3;
+  --surface: #ffffff;
+  --ink: #2b1826;
+  --muted: #6b5766;
+  --line: #ddd2d9;
+  --accent: #772953;
+  --accent-ink: #ffffff;
+  --accent-soft: #f1e3ea;
+  --orange: #e95420;
+  --code: #ece4ea;
+  --good: #1d7443;
+  --good-bg: #e4f3ea;
+  --bad: #b3261e;
+  --bad-bg: #fbe8e6;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1018; --surface: #281723; --ink: #f4eaf0; --muted: #b9a3b1; --line: #4b3345;
+    --accent: #e68fbd; --accent-ink: #2a1020; --accent-soft: #3d2336; --orange: #ff7f4d;
+    --code: #3a2634; --good: #6fd39a; --good-bg: #17382a; --bad: #ff9a8c; --bad-bg: #44211f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1018; --surface: #281723; --ink: #f4eaf0; --muted: #b9a3b1; --line: #4b3345;
+  --accent: #e68fbd; --accent-ink: #2a1020; --accent-soft: #3d2336; --orange: #ff7f4d;
+  --code: #3a2634; --good: #6fd39a; --good-bg: #17382a; --bad: #ff9a8c; --bad-bg: #44211f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+main { max-width: 720px; margin: 0 auto; display: grid; gap: 22px; }
+section { display: grid; gap: 22px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; text-wrap: balance; }
+code {
+  font-family: var(--font-mono); font-size: 0.88em; background: var(--code);
+  padding: 0.1em 0.4em; border-radius: 4px; overflow-wrap: anywhere;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+.brand { font-family: var(--font-mono); font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.brand b { color: var(--orange); font-weight: 600; }
+h1 { font-size: clamp(28px, 6vw, 38px); font-weight: 800; line-height: 1.25; }
+.lede { color: var(--muted); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 14px; }
+.label { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em; color: var(--muted); }
+
+.chips { display: grid; gap: 8px; }
+.chip, .seg { position: relative; display: block; }
+.chip input, .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: var(--bg);
+}
+.chip span i { font-style: normal; font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.chip input:checked + span { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.chip input:focus-visible + span, .seg input:focus-visible + span { outline: 3px solid var(--orange); outline-offset: 2px; }
+.chip span b { font-weight: inherit; }
+.chip span b::before { content: "☐ "; color: var(--muted); font-family: var(--font-mono); }
+.chip input:checked + span b::before { content: "☑ "; color: var(--accent); }
+
+.segs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.seg span {
+  display: block; text-align: center; border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 4px; background: var(--bg); font-family: var(--font-mono);
+}
+.seg input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.btn {
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+  border-radius: 8px; padding: 12px 20px; font-weight: 700; text-align: center;
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > .btn { flex: 1 1 180px; }
+
+/* quiz */
+.topbar { display: grid; gap: 8px; }
+.meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--orange); transition: width 0.25s ease; }
+@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+.tag { font-family: var(--font-mono); font-size: 12px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 10px; justify-self: start; }
+.qtext { font-size: 19px; font-weight: 700; line-height: 1.6; }
+.opts { display: grid; gap: 10px; }
+.opt {
+  display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; text-align: left;
+  width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px 14px;
+}
+.opt .k { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+.opt .t { min-width: 0; overflow-wrap: anywhere; }
+.opt .t small { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 2px; }
+.opt:not(:disabled):hover { border-color: var(--accent); background: var(--accent-soft); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--good); background: var(--good-bg); }
+.opt.right .k, .opt.right small { color: var(--good); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.opt.wrong .k, .opt.wrong small { color: var(--bad); }
+.opt.dim { opacity: 0.6; }
+.explain { border-left: 4px solid var(--orange); background: var(--bg); padding: 12px 14px; border-radius: 0 8px 8px 0; }
+.explain strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.explain.ok strong { color: var(--good); }
+.explain.no strong { color: var(--bad); }
+.hint { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* result */
+.score { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.score b { font-family: var(--font-mono); font-size: 56px; line-height: 1; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.score span { color: var(--muted); }
+.review { display: grid; gap: 14px; }
+.rv { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px; }
+.rv .q { font-weight: 700; }
+.rv .a { font-size: 15px; overflow-wrap: anywhere; }
+.rv .a .bad { color: var(--bad); }
+.rv .a .good { color: var(--good); }
+.rv .e { font-size: 14px; color: var(--muted); }
+@media (max-width: 480px) { .qtext { font-size: 17px; } .panel { padding: 16px; } }
+</style>
+
+<main>
+  <div class="brand"><b>$</b><span>linux-quiz --random</span></div>
+
+  <section id="v-home" class="home">
+    <div style="display:grid;gap:10px">
+      <h1>Linux 隨機練習</h1>
+      <p class="lede" id="lede"></p>
+    </div>
+    <div class="panel">
+      <div class="label">選擇章節</div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="panel">
+      <div class="label">題數</div>
+      <div class="segs" id="segs"></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="go" type="button">開始隨機練習</button>
+      <button class="btn ghost" id="goWrong" type="button" hidden>練習錯題本</button>
+    </div>
+    <p class="hint">每次開始都會重新抽題並打亂選項順序。作答時可按 1–4 或 A–D 選擇，按 Enter 進入下一題。</p>
+  </section>
+
+  <section id="v-quiz" hidden>
+    <div class="topbar">
+      <div class="meta"><span id="pos"></span><span id="sc"></span></div>
+      <div class="bar"><div id="prog"></div></div>
+    </div>
+    <div class="panel">
+      <span class="tag" id="qtag"></span>
+      <p class="qtext" id="qtext"></p>
+      <div class="opts" id="opts"></div>
+      <div class="explain" id="exp" hidden></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="next" type="button" hidden>下一題</button>
+      <button class="btn ghost" id="quit" type="button">結束並回首頁</button>
+    </div>
+  </section>
+
+  <section id="v-result" hidden>
+    <div class="panel">
+      <div class="label">本輪結果</div>
+      <div class="score"><b id="rscore"></b><span id="rpct"></span></div>
+      <p id="rmsg"></p>
+    </div>
+    <div class="row">
+      <button class="btn" id="again" type="button">再抽一輪</button>
+      <button class="btn" id="retryWrong" type="button" hidden>重做本輪錯題</button>
+      <button class="btn ghost" id="home" type="button">回首頁</button>
+    </div>
+    <div class="panel" id="rvbox" hidden>
+      <div class="label">答錯的題目</div>
+      <div class="review" id="review"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var CH = [
+    "Linux 簡介",
+    "登入與 Terminal",
+    "APT 套件與 SSH",
+    "指令格式與 Shell",
+    "Pipe、grep 與工作控制"
+  ];
+
+  /* [chapter 1-5, question, correct answer, [3 wrong answers], explanation]  Inline code uses backticks. */
+  var Q = [
+  /* ===== 第 1 章 Linux 簡介 ===== */
+  [1,"Linux 這個名稱最初指的是什麼？","作業系統核心（kernel）",["完整的桌面作業系統","套件管理工具","整套辦公軟體"],"Linux 原本是核心的名稱。一般說的「Linux 系統」還包含系統工具、桌面環境與應用程式。"],
+  [1,"下列哪一項不是 Linux 核心負責的工作？","提供網頁瀏覽功能",["程序排程","記憶體管理","裝置驅動"],"核心負責程序排程、記憶體、檔案系統、裝置驅動與網路；瀏覽器屬於應用程式。"],
+  [1,"「發行版（distribution，distro）」是指什麼？","把核心、工具、套件管理系統與應用程式整合成可安裝、可維護的作業系統",["只有 Linux 核心的原始碼","一種專門用來寫程式的編輯器","一款虛擬機軟體"],"Ubuntu 就是一種發行版。可安裝使用的是發行版，核心只是其中一部分。"],
+  [1,"講義中 Linux 系統的簡化分層，由下往上的順序是？","硬體 → Linux 核心 → 系統工具 → 應用程式",["硬體 → 系統工具 → Linux 核心 → 應用程式","Linux 核心 → 硬體 → 應用程式 → 系統工具","應用程式 → 系統工具 → 硬體 → Linux 核心"],"核心直接面對硬體，系統工具建立在核心上，應用程式在最上層。"],
+  [1,"Shell、編譯器、函式庫與套件管理屬於簡化分層中的哪一層？","系統工具",["Linux 核心","應用程式","硬體"],"這四項是第二層「系統工具」。"],
+  [1,"Ollama 在講義的分層圖中屬於哪一層？","應用程式",["Linux 核心","系統工具","硬體"],"圖中應用程式層列出瀏覽器、編輯器、Ollama、ROS 2 等。"],
+  [1,"哪個單位在 1969–1970 年發展出 Unix？","AT&T 貝爾實驗室",["芬蘭赫爾辛基大學","Red Hat 公司","自由軟體基金會"],"Unix 的多使用者、多工與可移植設計影響深遠。"],
+  [1,"1983 年發起 GNU 計畫的人是誰？","Richard Stallman",["Linus Torvalds","Dennis Ritchie","Mark Shuttleworth"],"GNU 計畫建立了自由軟體工具與授權生態。"],
+  [1,"1991 年公開 Linux 核心計畫的是誰？","芬蘭大學生 Linus Torvalds",["美國貝爾實驗室工程師","GNU 計畫的 Richard Stallman","Red Hat 創辦人"],"Linus Torvalds 當時是芬蘭的大學生。"],
+  [1,"Linux 1.0 在哪一年發布？","1994",["1983","1991","2004"],"講義的四個史實重點：1969–1970、1983、1991、1994。"],
+  [1,"Ubuntu 是以哪個發行版為基礎？","Debian",["Fedora","RHEL","Arch Linux"],"Ubuntu 屬於 Debian 家族，安裝與硬體支援較友善。"],
+  [1,"下列哪一個發行版不屬於 Debian 家族？","Fedora",["Ubuntu","Kali Linux","Raspberry Pi OS"],"Fedora 屬於 Red Hat 生態系。"],
+  [1,"Kali Linux 的主要定位是什麼？","資安測試與鑑識工具",["企業級商業支援","取代 Windows 的桌面系統","專門給樹莓派使用"],"Kali 適合特定實驗，不建議初學者拿來取代日常使用的 Ubuntu。"],
+  [1,"Raspberry Pi OS 主要用於哪裡？","Raspberry Pi",["企業伺服器叢集","手機作業系統","Windows 子系統"],"Raspberry Pi OS 以 Debian 為基礎。"],
+  [1,"RHEL（Red Hat Enterprise Linux）的特色是什麼？","企業級產品，重視穩定、認證與商業支援",["更新速度最快的實驗平台","專為資安鑑識設計","由社群免費維護的 Debian 分支"],"RHEL 是 Red Hat 生態系的企業級產品。"],
+  [1,"Fedora 的特色是什麼？","更新速度較快，是新技術的重要試驗與採用平台",["以長期不更新追求絕對穩定","只能用在伺服器","是 Ubuntu 的商業版"],"Fedora 也能作為一般桌面或開發環境。"],
+  [1,"CentOS Stream 在講義中的定位是？","位於 Fedora 與 RHEL 之間的持續交付發行版",["與過去的 CentOS Linux 完全相同","Debian 家族的一員","專為資安測試設計的發行版"],"CentOS Stream 不等同於過去的 CentOS Linux。"],
+  [1,"AlmaLinux 與 Rocky Linux 常見的特性是？","與 RHEL 相容的社群發行版，常見於伺服器",["Debian 家族的桌面版本","只能在樹莓派上執行","由 Canonical 維護的 LTS 版本"],"兩者是與 RHEL 相容的社群發行版。"],
+  [1,"Ubuntu 版本號 24.04 代表什麼？","2024 年 4 月發布",["2024 年第 4 週發布","第 24 版的第 4 次更新","支援到 2024 年 4 月"],"版本號採「年.月」。"],
+  [1,"Ubuntu LTS 版本的發布頻率與標準安全維護期是？","每兩年發布；標準安全維護 5 年",["每年發布；維護 2 年","每半年發布；維護 1 年","每兩年發布；維護 10 年且全部免費"],"延伸到更長年限的安全服務屬 Ubuntu Pro／ESM 範圍，不能直接理解為所有 LTS 都免費完整支援 10 年。"],
+  [1,"講義提醒：支援期延伸到更長年限的服務屬於哪個範圍？","Ubuntu Pro／ESM",["標準免費維護","Debian 社群維護","Fedora 的快速更新"],"所以不要把 LTS 直接等同於免費 10 年完整支援。"],
+  [1,"ROS 2 Jazzy 的 Ubuntu deb 套件，主要平台是哪個 Ubuntu 版本？","Ubuntu 24.04",["Ubuntu 18.04","Ubuntu 20.04","Ubuntu 22.04"],"這就是為什麼安裝專業軟體前要先確認 Ubuntu 版本。"],
+  [1,"本學期擬選用的 Ubuntu 版本是？","Ubuntu 22.04",["Ubuntu 18.04","Ubuntu 24.04","Ubuntu 26.04"],"理由是以穩定成熟為主要考量。"],
+  [1,"為什麼安裝 ROS 2 或其他專業軟體前，要先確認 Ubuntu 版本？","軟體通常只對特定的 Ubuntu 版本提供相容的套件",["所有版本的 Ubuntu 套件都完全相同","版本號越舊，功能一定越多","Ubuntu 版本只影響桌面壁紙"],"選版原則之一：特定軟體要先確認相容版本。"],
+  [1,"OpenBMC 是什麼？","以 Linux 為基礎的開放原始碼 BMC 韌體堆疊，用於伺服器硬體的監控與遠端管理",["一款資料庫軟體","Ubuntu 的桌面環境","專用的套件管理工具"],"屬於設備管理類的 Linux 應用。"],
+  [1,"講義提到 Ollama 可在 Linux 上以服務方式執行，提供什麼？","本機大型語言模型與 HTTP API",["雲端硬碟同步","螢幕錄影功能","防火牆設定介面"],"屬於伺服器與架站的應用範圍。"],
+  [1,"自走機器人、無人機、樹莓派、工業閘道器屬於 Linux 的哪類應用？","嵌入式與智慧系統",["伺服器與架站","設備管理","資安與系統管理"],"講義列出六類應用：開源生態、伺服器、軟體與 AI、嵌入式、設備管理、資安與系統管理。"],
+  [1,"課堂與長期專案選擇 Ubuntu 版本時，講義的原則是？","優先選 LTS，並以教師指定版本為準",["一律選最新的非 LTS 版本","選支援期最短的版本","隨意選擇，版本沒有差別"],"需要新硬體或新功能測試時才考慮較新版本。"],
+  [1,"用較新的 Ubuntu 版本做新硬體或新功能測試，缺點是什麼？","支援期較短、變動也較快",["完全無法安裝","不能使用 APT","沒有任何社群資源"],"這是選版時要權衡的地方。"],
+  [1,"下列何者「不是」講義列出本課程選 Ubuntu 的理由？","它是唯一能執行 ROS 2 的發行版",["安裝容易、教學資源多","APT 操作一致，適合建立 Linux 基礎","同時適用桌面、伺服器、雲端、AI 與機器人開發"],"講義並未說 Ubuntu 是唯一選擇，還強調發行版沒有絕對最好。"],
+  [1,"虛擬機（VM）作為 Linux 學習環境的優缺點是？","安全、可快照、容易重做；但需要較多記憶體與磁碟空間",["效能最好；但無法快照","完全不佔用記憶體；但不安全","可直接存取所有硬體；但無法重做"],"這是本課程常用的方式。"],
+  [1,"在實體機做雙重開機前，最重要的事是什麼？","分割磁碟前先備份資料",["先把 Windows 完全移除","先關閉所有網路","先升級 BIOS 到最舊版"],"講義明確寫到分割磁碟前必須備份資料。"],
+  [1,"WSL 的特性是什麼？","可在 Windows 中快速使用 Linux 命令列，但不等同完整的實體機或虛擬機",["與實體機完全一樣，沒有任何限制","只能執行圖形桌面","必須先安裝 VirtualBox"],"部分硬體與系統服務實驗可能受限。"],
+  [1,"雲端主機／遠端伺服器適合用來練習什麼？須注意什麼？","SSH、架站與服務部署；需留意費用、帳號與網路安全",["只能練習圖形介面；不用注意任何事","磁碟分割；須先備份","螢幕錄影；須先安裝 OBS"],"講義列出的使用方式之一。"],
+  [1,"用「可開機 USB」跑 Linux 時要留意什麼？","速度、耐用性與資料保存方式",["完全無法儲存任何資料","一定比實體機快","不能用於測試"],"優點是方便攜帶與測試。"],
+  [1,"講義結論：選擇發行版時應以什麼為依據？","軟體相容性、支援期、社群與使用目的",["哪一個最受歡迎","哪一個最新","哪一個檔案最小"],"發行版沒有絕對最好。"],
+  [1,"講義說明本課程使用 Ubuntu，最終目標是學會什麼？","可轉移到其他 Linux 發行版的基本觀念與操作",["只能用在 Ubuntu 的專屬操作","成為 Ubuntu 的核心開發者","背誦所有發行版版本號"],"先熟悉一個主流發行版即可。"],
+
+  /* ===== 第 2 章 登入、Files 與 Terminal ===== */
+  [2,"Ubuntu 22.04 的桌面環境是什麼？","GNOME 42",["KDE Plasma","Xfce","GNOME 22"],"可在 Settings 的 About 頁面查看系統資訊。"],
+  [2,"要查看系統資訊，可到哪裡？","Settings 的 About 頁面",["Settings → Privacy","Files 的家目錄","Terminal 的 Preferences"],"About 頁面會顯示 Ubuntu 版本與桌面環境等資訊。"],
+  [2,"修改使用者的群組成員後，通常要怎麼做才能套用新權限？","登出再登入",["什麼都不用做，立即生效","刪除家目錄","重新安裝 Ubuntu"],"登出會結束目前的圖形工作階段，重新登入後才會取得新的群組權限。"],
+  [2,"登出（Log Out）會做什麼？","結束目前的圖形工作階段",["關閉整台電腦","刪除所有暫存檔","重新啟動核心"],"關機要用 Power Off，重新開機用 Restart。"],
+  [2,"為什麼不要直接關閉 VirtualBox 視窗並選擇強制斷電？","以免檔案系統受損",["因為會讓密碼失效","因為會刪除虛擬機設定","因為會使網路卡消失"],"應先儲存資料，再用正常方式關機或重新開機。"],
+  [2,"Ubuntu 的 Files 程式名稱是什麼？","Nautilus",["Dolphin","Thunar","Explorer"],"功能類似 Windows 檔案總管。"],
+  [2,"使用者登入後，Files 預設開啟的是哪個目錄？","家目錄 /home/<username>（也可寫成 ~）",["根目錄 /","/etc","/tmp"],"例如帳號 nfu 的家目錄是 /home/nfu。"],
+  [2,"帳號 nfu 的家目錄是？","/home/nfu",["/nfu/home","/root/nfu","/usr/nfu"],"一般使用者家目錄在 /home 之下。"],
+  [2,"在 Files 的資料夾空白處按右鍵選 Open in Terminal，效果是？","以該資料夾作為 Terminal 的目前工作目錄",["刪除該資料夾","將資料夾複製到家目錄","開啟 TTY 文字主控台"],"其他方式啟動的 Terminal 通常從家目錄開始。"],
+  [2,"啟動 Terminal 最常用的熱鍵是？","Ctrl+Alt+T",["Ctrl+Shift+T","Alt+F4","Ctrl+Alt+Del"],"也可以在 Activities 搜尋 Terminal。"],
+  [2,"下列哪一種方式啟動 Terminal，會從「目前資料夾」開始，而不是家目錄？","在 Files 中選 Open in Terminal",["按 Ctrl+Alt+T","在 Activities 輸入 Terminal","點擊 Dock 上的 Terminal 圖示"],"其他方法通常從家目錄開始。"],
+  [2,"`touch test.txt` 的作用是什麼？","建立空白檔案；若檔案已存在，則更新時間資訊",["刪除 test.txt","顯示 test.txt 的內容","將 test.txt 複製到家目錄"],"touch 不會清空既有檔案的內容。"],
+  [2,"指令 `w` 的用途是？","查看目前登入的使用者及其活動",["顯示目前工作目錄","寫入檔案","重新啟動系統"],"講義用 w 示範 TTY 登入後看到的使用者資訊。"],
+  [2,"指令 `exit` 的作用是？","結束目前的 shell 或關閉 Terminal 工作階段",["關閉整台電腦","刪除目前使用者","重新啟動圖形桌面"],"SSH 連線後也用 exit 結束連線。"],
+  [2,"下列哪一個指令可以正常關機？","`sudo shutdown -h now`",["`sudo reboot`","`exit`","`touch poweroff`"],"`sudo poweroff` 也可以；`sudo reboot` 是重新開機。"],
+  [2,"`sudo reboot` 的效果是？","重新開機",["正常關機","登出使用者","切換到 TTY"],"sudo 會以系統管理權限執行後續指令，使用前應確認指令內容。"],
+  [2,"`sudo` 的意思是？","以系統管理權限執行後續指令",["刪除所有使用者","切換到文字主控台","讓指令在背景執行"],"使用前應確認指令內容。"],
+  [2,"圖形桌面無回應時，可按哪組熱鍵切換到 TTY 文字主控台？","Ctrl+Alt+F3～F6",["Ctrl+Alt+T","Ctrl+Shift+C","Ctrl+PageUp"],"登入後可執行必要的救援指令。"],
+  [2,"從 TTY 返回圖形桌面，講義提到通常使用哪組熱鍵？","Ctrl+Alt+F2（實際功能鍵可能因環境而異）",["Ctrl+Alt+F12","Ctrl+C","Alt+Tab"],"講義提醒實際的功能鍵可能因環境而異。"],
+  [2,"在 VirtualBox 中，若 Ctrl+Alt+F 功能鍵被 Host 攔截，應怎麼辦？","配合 Host Key 或筆電的 Fn 鍵",["直接切斷虛擬機電源","重新安裝 VirtualBox","改用 Windows 的 Ctrl+Alt+Del"],"仍應優先使用正常關機指令，不要直接切斷電源。"],
+  [2,"在 Terminal 中新增分頁的熱鍵是？","Ctrl+Shift+T",["Ctrl+Alt+T","Ctrl+T","Ctrl+N"],"Ctrl+Alt+T 是開啟新的 Terminal 視窗。"],
+  [2,"在 Terminal 的分頁之間切換，使用？","Ctrl+PageUp／PageDown",["Ctrl+Shift+C／V","Ctrl+Shift++","Ctrl+-"],"切換前一個／下一個分頁。"],
+  [2,"在 Terminal 中複製與貼上的熱鍵是？","Ctrl+Shift+C／V",["Ctrl+C／V","Ctrl+Alt+C／V","Ctrl+X／Z"],"Terminal 中不能只用 Ctrl+V 貼上；Ctrl+C 是中斷訊號。"],
+  [2,"在 Terminal 放大與縮小文字的熱鍵分別是？","放大 Ctrl+Shift++；縮小 Ctrl+-",["放大 Ctrl+-；縮小 Ctrl+Shift++","放大 Ctrl+PageUp；縮小 Ctrl+PageDown","放大 Ctrl+Shift+C；縮小 Ctrl+Shift+V"],"外觀設定也可在 Preferences 調整。"],
+  [2,"要調整 Terminal 的配色與字型，應從哪裡開始？","Terminal 選單的 Preferences，點選預設的 Unnamed Profile",["Settings → Power","Files 的家目錄","/etc 設定檔"],"Colors 改配色，Text 設定字型與大小。"],
+  [2,"什麼時候才需要在 Terminal Preferences 新增 Profile？","需要保留多套不同設定時",["每次修改配色都必須新增","第一次開啟 Terminal 時","每次切換分頁時"],"只修改預設設定時，不需要新增 Profile。"],
+  [2,"Ubuntu 22.04 中「多久後關閉顯示」在哪裡設定？","Settings → Power → Blank Screen",["Settings → Privacy → Screen Lock","Settings → About","Terminal → Preferences"],"兩項功能是分開設定的。"],
+  [2,"Ubuntu 22.04 中「是否自動鎖定」在哪裡設定？","Settings → Privacy → Screen Lock",["Settings → Power → Blank Screen","Settings → Network","Files → Preferences"],"螢幕變黑不一定代表已鎖定。"],
+  [2,"螢幕變黑是否一定代表已鎖定？","不一定，Blank Screen 與 Screen Lock 是分開設定的",["一定已鎖定","一定已登出","一定已關機"],"所以兩個設定都要分別檢查。"],
+  [2,"共用或工作場所的電腦，關於自動鎖定應如何處理？","仍應保留自動鎖定，避免他人使用已登入的帳號",["一律關閉自動鎖定","只要延長 Blank Screen 就夠了","把密碼貼在螢幕上"],"上課示範時可以暫時延長 Blank Screen 時間。"],
+  [2,"本課程虛擬機的帳號與密碼是？","帳號 nfu，密碼 csie",["帳號 csie，密碼 nfu","帳號 root，密碼 root","帳號 ubuntu，密碼 ubuntu"],"講義 2-4 節的設定。"],
+  [2,"Files、Terminal 與 TTY 的分工，下列何者正確？","Files 做圖形化檔案管理；Terminal 輸入命令；TTY 在圖形介面失效時救援",["Files 輸入命令；Terminal 管理檔案；TTY 設定螢幕","三者功能完全相同","TTY 專門用來管理家目錄圖示"],"本章小結的內容。"],
+
+  /* ===== 第 3 章 APT 與 SSH ===== */
+  [3,"APT 中所謂「套件」包含什麼？","把程式、函式庫及設定檔整理在一起",["只有單一執行檔","只有說明文件","只有桌面壁紙"],"APT 再從軟體庫（repository）取得套件資訊並處理相依關係。"],
+  [3,"APT 從哪裡取得套件資訊？","軟體庫（repository）",["家目錄","/dev/null","Terminal 的 Profile"],"APT 也負責處理相依關係。"],
+  [3,"`apt update` 的作用是什麼？","只更新可用套件的清單，不會升級已安裝軟體",["升級所有已安裝的軟體","移除不需要的套件","重新開機"],"這兩個概念很容易混淆。"],
+  [3,"`apt upgrade` 的作用是什麼？","下載並安裝已安裝軟體的新版套件",["只更新套件清單","解除安裝所有套件","更新 Ubuntu 版本號為 24.04"],"通常先執行 `apt update` 更新清單，再依需要執行 `apt upgrade`。"],
+  [3,"正確的順序是？","先 `sudo apt update`，再 `sudo apt upgrade`",["先 `sudo apt upgrade`，再 `sudo apt update`","只需要 `sudo apt update` 就會升級","兩者完全相同，擇一即可"],"update 取得最新清單，upgrade 才真正安裝新版。"],
+  [3,"互動操作與撰寫自動化腳本，分別常用哪個指令？","互動用 `apt`；腳本常用輸出較穩定的 `apt-get`",["互動用 `apt-get`；腳本用 `apt`","兩者都只能用 `apt`","兩者都只能用 `apt-get`"],"apt 輸出較精簡，apt-get 輸出較穩定。"],
+  [3,"講義對於 `apt install -y` 的 `-y` 選項有什麼建議？","只有確定接受所有變更時才加，初學者不要養成一律略過確認的習慣",["每次都要加，才不會出錯","永遠不能使用","只能搭配 `apt remove` 使用"],"-y 會略過確認提示。"],
+  [3,"安裝、移除、清除不再需要的相依套件，分別是哪三個指令？","`install`、`remove`、`autoremove`",["`upgrade`、`delete`、`clean`","`update`、`erase`、`purge-all`","`get`、`drop`、`free`"],"例如 `sudo apt install <package>`。"],
+  [3,"`curl` 在課程中的用途是？","下載資源、測試 HTTP API",["螢幕錄影","播放影片","編譯 C 程式"],"安裝指令：`sudo apt install curl`。"],
+  [3,"查看網卡與 IP 位址，Ubuntu 22.04 優先使用哪個指令？","`ip -br address`",["`ifconfig`","`apt show ip`","`w`"],"net-tools／ifconfig 僅作舊工具補充。"],
+  [3,"OBS Studio 在課程中的用途與安裝指令是？","Wayland 螢幕錄影：`sudo apt install obs-studio qtwayland5`",["播放影片：`sudo apt install vlc`","程式編輯：`sudo snap install code --classic`","編譯 C 程式：`sudo apt install build-essential`"],"錄影後可用 VLC 播放。"],
+  [3,"VLC 在課程中的用途是？","播放錄製的影片",["螢幕錄影","程式編輯","測試 HTTP API"],"安裝指令：`sudo apt install vlc`。"],
+  [3,"VS Code 在課程中的安裝方式是？","`sudo snap install code --classic`",["`sudo apt install code`","`sudo apt install vscode-studio`","`sudo apt upgrade code`"],"用途是程式編輯與開發。"],
+  [3,"安裝 C／C++ 開發環境，應該安裝哪個套件？","`build-essential`",["`gcc-only`","`net-tools`","`openssh-server`"],"它會安裝 gcc、g++、make 及必要標頭檔。"],
+  [3,"`build-essential` 會提供什麼？","gcc、g++、make 及必要標頭檔",["只有 VS Code","SSH 伺服器","螢幕錄影工具"],"Ubuntu 22.04 優先使用 build-essential，單獨安裝 gcc 僅作補充。"],
+  [3,"OBS 要以 Wayland 模式啟動時，先測試的指令是？","`QT_QPA_PLATFORM=wayland obs`",["`sudo apt remove obs`","`ssh obs@localhost`","`export OBS=wayland`"],"確認成功後，再把 `export QT_QPA_PLATFORM=wayland` 加到 `~/.profile`，登出並重新登入。"],
+  [3,"OBS 的 Wayland 測試成功後，要永久生效，應該怎麼做？","在 `~/.profile` 加入 `export QT_QPA_PLATFORM=wayland`，登出再登入",["重新安裝 Ubuntu","刪除 `~/.profile`","把 `obs` 改名"],"臨時變數關閉終端機就會消失，要寫入設定檔。"],
+  [3,"要在 Ubuntu 上啟用 SSH 伺服器，需要安裝哪個套件？","`openssh-server`",["`openssh-client`","`ssh-ubuntu`","`obs-studio`"],"安裝後用 `systemctl status ssh --no-pager` 檢查狀態。"],
+  [3,"檢查 SSH 服務狀態的指令是？","`systemctl status ssh --no-pager`",["`apt status ssh`","`ssh status`","`ip -br address`"],"`--no-pager` 讓輸出直接顯示不進入分頁器。"],
+  [3,"SSH 採用什麼架構？","Client／Server：Ubuntu 執行 sshd 服務，Windows PowerShell 用 ssh 客戶端連線",["點對點，不分伺服器與客戶端","只能在同一台電腦上使用","Server 在 Windows，Client 在 Ubuntu"],"本課程由 Windows PowerShell 連入 Ubuntu VM。"],
+  [3,"SSH 預設使用的 TCP 埠號是？","22",["21","80","443"],"21 是 FTP，80 是 HTTP，443 是 HTTPS。"],
+  [3,"VirtualBox 的 Adapter 1（NAT Network）主要用途是？","讓 VM 上網；同一 NAT Network 內的 VM 可互相連線",["讓 Windows Host 與 VM 互通，但不能上網","停用所有網路","只用來傳輸滑鼠訊號"],"Adapter 2 才是 Host-only。"],
+  [3,"VirtualBox 的 Adapter 2（Host-only Adapter）主要用途是？","讓 Windows Host 與 VM 互通；不負責上網",["讓 VM 連到網際網路","讓 VM 互相共用磁碟","提供 DHCP 伺服器給網際網路"],"Windows 的 SSH 就是走這張網卡。"],
+  [3,"從 Windows PowerShell SSH 進 Ubuntu 時，應使用 Ubuntu 的哪個位址？","Host-only 位址（常為 192.168.56.x）",["NAT Network 位址","127.0.0.1 的 Windows 位址","任何公開 IP"],"實際位址以 `ip -br address` 的畫面結果為準。"],
+  [3,"Host-only 網卡的位址常見網段是？","192.168.56.x",["10.0.2.x","172.16.0.x","8.8.8.x"],"講義註明常為 192.168.56.x，但實際以畫面結果為準。"],
+  [3,"下列哪個是從 Windows PowerShell 連入的正確指令？","`ssh nfu@192.168.56.xxx`",["`ssh 192.168.56.xxx@nfu`","`apt install nfu@192.168.56.xxx`","`sudo ssh nfu`"],"格式為 `ssh 帳號@主機位址`。"],
+  [3,"第一次 SSH 連線，系統詢問是否信任主機金鑰，應該怎麼做？","核對目標後輸入 yes，再輸入密碼",["直接按 Ctrl+C","輸入 no 才能繼續","立刻關閉電腦"],"信任後，主機金鑰會記錄起來，之後不會再詢問。"],
+  [3,"SSH 連線成功後，用來結束連線的指令是？","`exit`",["`sudo reboot`","`apt remove ssh`","`ip -br address`"],"連線後也可執行 `hostname`、`ip -br address` 或 `w` 檢查。"],
+  [3,"Windows 找不到 `ssh` 指令時，應怎麼處理？","到 Settings → Apps → Optional Features 安裝 OpenSSH Client",["在 Ubuntu 安裝 openssh-client","重新安裝 VirtualBox","改用 `apt install ssh` 在 PowerShell 執行"],"Windows 10／11 內建選用功能。"],
+  [3,"Ubuntu 啟用 UFW 防火牆後，要允許 SSH 連入，可執行？","`sudo ufw allow OpenSSH`",["`sudo ufw deny OpenSSH`","`sudo apt remove ufw`","`sudo ssh allow`"],"否則防火牆可能擋住 22 埠。"],
+  [3,"複製 VM 時，網路上要注意什麼？","產生新的 MAC 位址，並設定不同的主機名稱",["保持相同的 MAC 位址","保持相同的主機名稱","刪除所有網卡"],"否則兩台 VM 會在網路上衝突或難以區分。"],
+  [3,"兩台 VM 要互相連線，網卡應如何設定？","Adapter 1 選同一個 NAT Network，Adapter 2 選同一個 Host-only 網路",["各自選不同的 NAT Network","兩台都關閉 Adapter 1","只需要選 Adapter 2 的 NAT"],"同一個 NAT Network 內的 VM 才能互相連線。"],
+  [3,"講義的本章小結，下列哪一項正確？","先執行 `apt update` 更新清單，再依需要安裝或升級；不要盲目使用 sudo 或 -y",["先 `apt upgrade` 再 `apt update`","每條指令都應加 sudo -y","SSH 的埠號預設為 2222"],"也要確認指令與套件來源。"],
+  [3,"NAT Network 與 Host-only 的分工，下列何者正確？","NAT Network 負責上網與 VM 互通；Host-only 負責 Windows 對 VM 的 SSH",["NAT 負責 SSH；Host-only 負責上網","兩者都負責上網","兩者都只能讓 VM 彼此連線"],"本章小結的最後一點。"],
+
+  /* ===== 第 4 章 指令格式與 Shell ===== */
+  [4,"指令的基本格式為？","指令 [選項]… [作用對象]…",["[指令] 選項 [作用對象]","選項 指令 作用對象","作用對象 指令 選項"],"方括號表示可省略，省略號表示可有多個。"],
+  [4,"在指令格式中，方括號與省略號分別代表？","方括號表示可省略；省略號表示可有多個",["方括號表示必填；省略號表示只能一個","方括號表示註解；省略號表示結束","兩者都表示必填"],"例如 `ls` 沒有選項和作用對象也能執行。"],
+  [4,"在 `ls -l /usr/bin/nano` 中，`-l` 與 `/usr/bin/nano` 分別是？","選項；作用對象",["指令；選項","作用對象；指令","選項；指令"],"`ls` 是指令。"],
+  [4,"短選項與長選項的寫法通常是？","短選項以 `-` 開頭；長選項以 `--` 開頭",["短選項以 `--` 開頭；長選項以 `-` 開頭","兩者都以 `-` 開頭","兩者都以 `/` 開頭"],"例如 `ls -a` 與 `ls --help`。"],
+  [4,"下列哪一項關於合併短選項的敘述正確？","`ls -l -a` 常可寫成 `ls -la`，但不是所有指令都允許合併",["所有指令都一定可以合併","永遠不能合併","只有 `ls` 不能合併"],"遇到不確定的格式，應查閱說明。"],
+  [4,"檔名以 `-` 開頭（例如 `-demo`）時，怎樣才能安全刪除它？","`rm -- -demo`",["`rm -demo`","`rm demo-`","`rm - demo`"],"`--` 表示選項已結束，後面都是作用對象。"],
+  [4,"Shell 如何切分指令的參數？","先依空白切分；含空白或特殊字元的字串應加引號",["依逗號切分","依句號切分","不切分，整行視為一個參數"],"所以路徑含空白時要加引號。"],
+  [4,"`echo '$HOME'` 會輸出什麼？","`$HOME`（單引號保留原樣）",["使用者的家目錄路徑","空白","錯誤訊息"],"單引號保留原樣，不展開變數。"],
+  [4,"`echo \"$HOME\"` 會輸出什麼？","使用者的家目錄路徑（雙引號仍會展開變數）",["`$HOME`","空白","`HOME`"],"雙引號仍會展開變數。"],
+  [4,"提示字元 `nfu@vma:~/workspace$` 依序顯示什麼？","帳號、主機名稱、目前目錄",["主機名稱、帳號、檔案名稱","帳號、密碼、目前目錄","目前目錄、帳號、主機名稱"],"`~` 代表家目錄，`$` 是提示字元的結尾。"],
+  [4,"一般使用者與 root 的提示字元，常以什麼結尾？","一般使用者 `$`；root `#`",["一般使用者 `#`；root `$`","兩者都以 `>` 結尾","兩者都以 `%` 結尾"],"教材中的 `$` 或 `#` 不要照著輸入。"],
+  [4,"教材範例中的 `$` 或 `#` 開頭，在實際輸入時該怎麼辦？","不要輸入它們，因為提示字元不屬於指令",["一定要一起輸入","用 `sudo` 取代它們","改成 `>`"],"提示字元是終端機自己顯示的。"],
+  [4,"`report.txt` 與 `Report.txt` 的關係是？","是不同的檔案，因為 Linux 檔名區分大小寫",["是同一個檔案","後者會自動覆蓋前者","不能同時存在"],"這與 Windows 預設不分大小寫不同。"],
+  [4,"以 `.` 開頭的檔名，預設會怎樣？","預設不顯示，可用 `ls -a` 查看",["預設無法被讀取","預設會被刪除","只有 root 看得到"],"例如 `.bashrc`。"],
+  [4,"`~`、`.`、`..` 分別代表什麼？","家目錄、目前目錄、上一層目錄",["根目錄、家目錄、上一層目錄","目前目錄、家目錄、根目錄","上一層目錄、目前目錄、家目錄"],"`.` 是目前目錄，`..` 是上一層。"],
+  [4,"萬用字元（如 `*`）是誰展開的？","Shell 先展開，再把結果交給指令",["指令自己展開","作業系統核心展開","由檔案系統展開"],"例如 `ls *.txt` 會把目前目錄中符合的檔名交給 `ls`。"],
+  [4,"萬用字元 `*` 與 `?` 分別匹配什麼？","`*` 匹配任意長度字串；`?` 匹配一個字元",["`*` 匹配一個字元；`?` 匹配任意長度字串","兩者都只匹配一個字元","兩者都只匹配數字"],"例如 `ls ?.txt` 只會匹配檔名恰好一個字元的 txt 檔。"],
+  [4,"`echo '*.txt'` 與 `echo *.txt` 的差異是？","前者原樣輸出 `*.txt`；後者由 Shell 展開成符合的檔名",["兩者結果一定相同","前者展開檔名；後者原樣輸出","兩者都會報錯"],"引號可以阻止萬用字元展開。"],
+  [4,"想保留星號 `*` 本身，不要被展開，應怎麼做？","加上引號",["加上 sudo","加在 PATH","使用 `history`"],"單引號或雙引號都能阻止萬用字元展開（雙引號仍展開變數）。"],
+  [4,"在 `man` 閱讀手冊時，按鍵操作是？","Space 下一頁，q 離開",["Enter 離開，q 下一頁","Ctrl+C 下一頁，Esc 離開","Tab 下一頁，Delete 離開"],"`man` 用來閱讀完整手冊。"],
+  [4,"想「快速查看語法與選項」，可用？","`ls --help`",["`man -f ls`","`type ls`","`alias ls`"],"`man` 是完整手冊，`--help` 較快速。"],
+  [4,"`type` 指令的用途是？","判斷名稱是內建指令、別名或外部程式",["顯示檔案內容","輸入文字到檔案","重新啟動 Shell"],"例如 `type cd`。"],
+  [4,"`command -v python3` 的作用是？","顯示實際會執行的命令或路徑",["安裝 python3","刪除 python3","更新 python3"],"初學階段優先用 `type` 或 `command -v`。"],
+  [4,"講義建議初學階段優先使用哪些指令來查詢指令來源？","`type` 或 `command -v`",["只用 `which`","只用 `find`","只用 `locate`"],"同一名稱可能同時是別名、函式、內建指令與外部程式，`which` 有時無法完整說明。"],
+  [4,"下列哪一個通常是由 Shell 直接處理的內建指令？","`cd`",["`ls`","`grep`","`python3`"],"`cd`、`alias`、`export`、`history` 由 Shell 直接處理；`ls`、`grep` 通常是外部程式。"],
+  [4,"下列哪一個通常是外部程式，而不是 Shell 內建指令？","`ls`",["`cd`","`alias`","`export`"],"可用 `type ls` 驗證。"],
+  [4,"Ubuntu 預設的互動式 Shell 通常是？","Bash",["Zsh","PowerShell","cmd"],"講義的範例都以 Bash 為準。"],
+  [4,"同名項目出現在 man 手冊的不同章節時，要看 passwd 設定檔的格式，應輸入？","`man 5 passwd`",["`man passwd 5`","`man --5 passwd`","`man passwd.conf`"],"可指定章節號碼；第 5 章通常是設定檔格式。"],
+  [4,"只輸入 `alias`（不帶參數）會做什麼？","查看目前設定的別名",["刪除所有別名","建立名為 alias 的別名","重新載入 `~/.bashrc`"],"建立用 `alias ll='ls -alF'`。"],
+  [4,"取消別名 `cwork`，使用哪個指令？","`unalias cwork`",["`unset cwork`","`alias -d cwork`","`rm cwork`"],"`unset` 用於變數，`unalias` 用於別名。"],
+  [4,"在終端機直接建立的別名，效果範圍與持久性是？","只存在於目前 Shell；要每次生效須寫入 `~/.bashrc`",["永久存在，重開機也不會消失","對所有使用者生效","只對 root 生效"],"寫入後再執行 `source ~/.bashrc`。"],
+  [4,"把別名寫入 `~/.bashrc` 後，要立刻套用，可執行？","`source ~/.bashrc`",["`unalias ~/.bashrc`","`history ~/.bashrc`","`export ~/.bashrc`"],"修改設定檔前應先確認內容，避免造成 Shell 錯誤。"],
+  [4,"別名與原指令同名，想暫時略過別名，可在指令前加什麼？","反斜線，例如 `\\ls`",["井字號 `#`","驚嘆號 `!`","波浪號 `~`"],"`\\ls` 會執行原始的 `ls`。"],
+  [4,"需要參數判斷的複雜重複工作，講義建議用什麼取代別名？","Shell 函式或腳本",["更長的別名","寫在 history 裡","直接用 `export`"],"別名只適合固定且簡短的替換。"],
+  [4,"下列哪一個是正確的變數設定？","`COURSE=Linux`",["`COURSE = Linux`","`$COURSE=Linux`","`set COURSE Linux`"],"設定變數時，等號左右不能有空白。"],
+  [4,"讀取變數內容時，應該怎麼寫？","在名稱前加 `$`（較複雜時可寫成 `${COURSE}`）",["在名稱後加 `$`","在名稱前加 `#`","在名稱前加 `@`"],"例如 `echo $COURSE`。"],
+  [4,"下列哪一個是合法的變數名稱？","`LAB_SERVER`",["`1LAB`","`LAB-SERVER`","`LAB SERVER`"],"名稱使用英文字母、數字與底線，且不能以數字開頭。"],
+  [4,"Shell 變數與環境變數的差別是？","Shell 變數只屬於目前 Shell；環境變數會傳給由此 Shell 啟動的子程序",["兩者完全相同","環境變數只存在於目前 Shell","Shell 變數會自動傳給所有使用者"],"用 `export` 把變數變成環境變數。"],
+  [4,"要把 `COURSE` 變成環境變數，使用？","`export COURSE`",["`unset COURSE`","`alias COURSE`","`history COURSE`"],"也可以一次設定：`export LAB_SERVER=192.168.56.101`。"],
+  [4,"`export -n NAME` 的效果是？","只取消 export 屬性，變數本身仍存在",["刪除變數","刪除整個 Shell","把變數寫入 `~/.bashrc`"],"要真正刪除變數，使用 `unset NAME`。"],
+  [4,"要真正刪除變數 `COURSE`，使用？","`unset COURSE`",["`export -n COURSE`","`unalias COURSE`","`history -d COURSE`"],"`export -n` 只是取消 export 屬性。"],
+  [4,"終端機關閉後，臨時設定的變數通常會怎樣？","通常會消失；需要長期生效時再寫入設定檔",["永遠保留","自動寫入 `~/.bash_history`","自動傳給所有使用者"],"可依用途寫入 `~/.bashrc`、`~/.profile` 或服務設定。"],
+  [4,"子程序修改自己的變數後，會影響父 Shell 嗎？","不會，子程序取得的是啟動當下的環境變數副本",["會，立刻同步","只有 root 才會","只有在 SSH 時才會"],"所以修改要寫入設定檔，而不是在子程序中改。"],
+  [4,"為什麼從目前終端機 SSH 到另一台主機後，遠端不會自動有本機自訂的變數？","遠端 Session 是另一個獨立的環境，不會自動繼承本機的自訂變數",["因為 SSH 會刪除所有變數","因為變數只能在 root 使用","因為 SSH 只支援 PATH"],"環境變數只傳給子程序，不會傳到另一台主機。"],
+  [4,"PATH 環境變數的內容是什麼？","一串以冒號分隔的目錄",["一串以逗號分隔的檔名","一個單一檔案","目前登入的使用者名稱"],"輸入指令名稱但未寫路徑時，Shell 依 PATH 順序尋找可執行檔。"],
+  [4,"為什麼執行目前目錄的程式要寫 `./a.out`？","目前目錄通常不在 PATH 中",["因為 a.out 需要 root 權限","因為 `.` 代表上一層","因為檔名區分大小寫"],"`./` 明確指定目前目錄。"],
+  [4,"`history 10` 的作用是？","只顯示最近十筆歷史指令",["刪除十筆歷史","執行第 10 筆指令","儲存十筆歷史到檔案"],"執行指定編號的指令用 `!編號`。"],
+  [4,"`!178` 的作用是？","立刻重新執行編號 178 的指令",["刪除編號 178 的歷史","顯示編號 178 的指令但不執行","搜尋包含 178 的指令"],"使用前應先確認內容。"],
+  [4,"想尋找舊指令，比 `!178` 更安全的方式是？","Ctrl+R 反向搜尋",["`history -c`","`unset history`","`exit`"],"Ctrl+R 會依關鍵字搜尋，且讓你確認後才執行。"],
+  [4,"為什麼不要把密碼、Token 或私密金鑰直接寫在命令列？","它們可能留在歷史紀錄、程序清單或日誌中",["因為命令列長度有限制","因為 Bash 不支援特殊字元","因為會讓指令變慢"],"清除歷史也不能補救已外洩的憑證。"],
+  [4,"`history -d 178` 與 `history -c` 的差別是？","前者刪除指定紀錄；後者清除目前 Shell 的歷史清單",["前者清除全部；後者刪除指定紀錄","兩者完全相同","前者重新執行；後者顯示"],"清除紀錄不能補救已外洩的密碼，必要時仍應立即更換憑證。"],
+  [4,"Bash 的歷史指令，通常何時才寫入 `~/.bash_history`？","結束 Shell 時",["每按一次 Enter 就立刻寫入","開機時寫入","永遠不會寫入"],"目前 Session 的歷史先保存在記憶體。同時開多個終端機時，寫入順序可能和預期不同。"],
+  [4,"要一次瀏覽多筆與 ssh 相關的歷史紀錄，適合用？","`history | grep ssh`",["`history -c ssh`","`ssh history`","`!ssh -d`"],"向上鍵找最近幾筆；Ctrl+R 依關鍵字搜尋；history 搭配 grep 一次瀏覽多筆。"],
+  [4,"重新執行歷史指令前，應該先檢查什麼？","路徑、參數與目前身分",["電腦的品牌","桌布設定","螢幕解析度"],"同一指令在不同目錄或不同使用者下，結果可能完全不同。"],
+
+  /* ===== 第 5 章 Pipe、grep 與工作控制 ===== */
+  [5,"Pipe 符號 `|` 的作用是？","把左側指令的標準輸出（STDOUT）交給右側指令作為標準輸入（STDIN）",["把右側指令的輸出交給左側指令","把輸出寫入檔案","讓指令在背景執行"],"資料由左向右流動，可以連接兩個以上的指令。"],
+  [5,"Pipe 預設會傳送錯誤訊息（STDERR）嗎？","不會，預設只傳送 STDOUT",["會，所有輸出都會傳送","只傳送 STDERR","只有 root 才會傳送"],"錯誤訊息會直接顯示在螢幕上，除非另外重新導向。"],
+  [5,"`ls -1 | nl` 中的 `nl` 作用是？","替非空白列編號",["刪除空白列","排序檔名","計算檔案大小"],"`ls -1` 讓每列輸出一個名稱。"],
+  [5,"`ls -1` 的 `-1` 效果是？","每列輸出一個名稱",["只顯示一個檔案","列出 1 層子目錄","顯示隱藏檔"],"方便搭配 nl、grep、head 等指令。"],
+  [5,"`ls -1 | grep 'txt' | nl | head -n 3` 會輸出什麼？","含有 txt 的名稱，加上編號，只顯示前 3 列",["所有檔案，不加編號","只顯示最後 3 列，且不加編號","只有 3 個目錄"],"依序：列出名稱 → 保留含 txt → 編號 → 取前 3 列。"],
+  [5,"`head -n 3` 的作用是？","只顯示前 3 列",["刪除前 3 列","只顯示最後 3 列","顯示 3 個檔案的大小"],"和 Pipe 搭配，可限制輸出量。"],
+  [5,"`grep -n 'mqtt' pub.py` 的 `-n` 效果是？","顯示符合內容及原始列號",["只計算次數","忽略大小寫","排除符合的列"],"例如輸出會是 `12:import mqtt...`。"],
+  [5,"`grep -i 'ubuntu' notes.txt` 的 `-i` 效果是？","忽略英文大小寫",["反向搜尋","顯示列號","安靜模式"],"所以 Ubuntu、UBUNTU 都會被找到。"],
+  [5,"`grep -v '^#' config.txt` 會輸出什麼？","排除以 `#` 開頭的列",["只顯示以 `#` 開頭的列","只顯示最後一列","刪除 config.txt"],"`-v` 表示反向，`^` 代表列首；常用於略過註解行。"],
+  [5,"搜尋內容來自使用者輸入或變數時，建議怎麼寫？","加上雙引號，例如 `grep \"$keyword\" notes.txt`",["不加引號","加單引號 `'$keyword'`","加反斜線 `\\$keyword`"],"雙引號會展開變數，同時避免內容含空白被切開。"],
+  [5,"`grep` 可以直接讀檔，為什麼通常不必先使用 `cat`？","因為 grep 本身就能讀取檔案",["因為 cat 已被移除","因為 cat 只能用於目錄","因為 grep 只能讀取 STDERR"],"例如 `grep -i 'ubuntu' notes.txt`。"],
+  [5,"特殊參數 `$?` 保存的是什麼？","上一個指令的離開狀態",["目前的行程編號","目前的使用者名稱","目前的目錄"],"應立即查看，否則會被下一個指令覆蓋。"],
+  [5,"為什麼要「立即」查看 `$?`？","因為它只保存上一個指令的狀態，之後會被覆蓋",["因為過一段時間會被刪除","因為只有 root 能讀取","因為它會佔用大量記憶體"],"例如 `echo \"$?\"` 之後 `$?` 又變成 echo 的狀態。"],
+  [5,"一般而言，離開狀態 0 與非 0 分別代表什麼？","0 代表成功；非 0 代表未達成要求或發生錯誤",["0 代表失敗；非 0 代表成功","0 代表背景執行；非 0 代表前景","兩者都代表成功"],"這是 Shell 條件執行的基礎。"],
+  [5,"`grep` 回傳 1 表示什麼？","沒有找到符合資料，並不等同於程式故障",["檔案不存在","選項錯誤","一定是權限不足"],"回傳 0 是找到；回傳 2 或其他值才是真正的執行錯誤。"],
+  [5,"`grep` 回傳 0 表示什麼？","找到符合資料",["沒有找到","檔案不存在","選項錯誤"],"成功找到就是 0。"],
+  [5,"`grep` 回傳 2 通常表示什麼？","真正的執行錯誤，例如檔案不存在、選項錯誤",["沒有找到符合資料","找到多筆符合資料","指令在背景執行"],"和回傳 1（沒找到）不同。"],
+  [5,"`grep -q` 的 `-q` 代表什麼？","quiet：不印出搜尋結果，只用離開狀態回答「有沒有找到」",["quick：加快搜尋速度","question：每次都詢問","queue：排隊執行"],"常用於 `grep -q 'Ubuntu' /etc/os-release && ...`。"],
+  [5,"為什麼 `sudo echo 'Linux course' > /etc/course-note` 可能出現 Permission denied？","`>` 由目前（一般使用者的）Shell 先處理，sudo 只提升了 echo 的權限",["因為 echo 不能使用 sudo","因為 /etc 不存在","因為字串含有空白"],"重新導向不是 echo 做的，而是 Shell。"],
+  [5,"下列哪一個寫法可以正確地寫入需要管理權限的檔案？","`echo 'Linux course' | sudo tee /etc/course-note >/dev/null`",["`sudo echo 'Linux course' > /etc/course-note`","`echo 'Linux course' > sudo /etc/course-note`","`sudo > /etc/course-note echo`"],"讓有管理權限的 tee 去寫檔案。"],
+  [5,"`tee FILE` 的作用是？","同時寫入檔案並輸出到螢幕",["只寫入檔案，不輸出","只輸出，不寫入檔案","刪除檔案"],"搭配 sudo，就可以寫入需要管理權限的檔案。"],
+  [5,"`tee -a FILE` 的 `-a` 效果是？","附加到檔尾，不覆蓋原內容",["覆蓋整個檔案","只顯示不寫入","刪除檔案後再寫入"],"沒有 `-a` 時，tee 預設會覆蓋。"],
+  [5,"`>/dev/null` 在 `sudo tee` 後面的用途是？","丟棄 tee 原本會顯示在螢幕上的輸出",["把輸出儲存到 /dev","提升權限","讓指令在背景執行"],"只想寫檔，不想在螢幕看到回顯時使用。"],
+  [5,"`sudo sh -c '完整指令字串'` 的主要風險是？","整段字串都以管理權限執行，內容複雜時較容易誤傷系統",["會讓重新導向失效","只能寫入家目錄","無法執行任何指令"],"講義更推薦使用 `sudo tee`。"],
+  [5,"前景工作與背景工作的差別是？","前景工作占用目前 Terminal 並可接收鍵盤輸入；背景工作不占用命令提示字元",["前景工作不能輸出；背景工作可輸出","兩者完全相同","前景工作只能由 root 執行"],"背景工作仍可能把輸出顯示在 Terminal。"],
+  [5,"背景工作若嘗試直接讀取終端機輸入，通常會怎樣？","被暫停",["自動取得輸入","自動結束並刪除","轉成前景並繼續"],"背景工作無法像前景工作一樣取得鍵盤輸入。"],
+  [5,"在指令後面加 `&`，效果是？","讓指令在背景執行",["讓指令以 root 執行","讓指令永遠不結束","把輸出寫入檔案"],"例如 `sleep 120 &`。"],
+  [5,"`jobs` 指令的作用是？","查看目前 Shell 管理的工作",["列出所有系統行程","列出所有使用者","列出所有套件"],"只包含目前 Shell 所啟動的工作。"],
+  [5,"`fg %1` 的作用是？","把第 1 號工作移到前景",["把第 1 號工作移到背景","刪除第 1 號工作","暫停第 1 號工作"],"`%1` 代表 `jobs` 列出的工作編號。"],
+  [5,"前景工作執行中，按 Ctrl+C 與 Ctrl+Z 分別會？","Ctrl+C 通常送出中斷訊號；Ctrl+Z 暫停工作",["Ctrl+C 暫停；Ctrl+Z 中斷","兩者都會複製文字","兩者都是移到背景繼續執行"],"暫停後可用 `bg %1` 或 `fg %1` 繼續。"],
+  [5,"用 Ctrl+Z 暫停工作後，要讓它在背景繼續執行，使用？","`bg %1`",["`fg %1`","`jobs -k`","`exit`"],"`fg %1` 則是拉回前景。"],
+  [5,"為什麼 `&` 不適合用來建立需要開機自動啟動的長期服務？","`&` 只是 Shell 的工作控制功能；長期服務應使用 systemd service",["因為 `&` 會讓電腦當機","因為 `&` 只能執行 `sleep`","因為 systemd 已被移除"],"需要開機啟動或持續管理的程式，應使用 systemd service。"],
+  [5,"`&&` 的執行規則是？","左側成功（離開狀態 0），才執行右側",["左側失敗，才執行右側","不論成敗都執行右側","同時執行左右兩側"],"例如 `mkdir demo && cd demo`。"],
+  [5,"`||` 的執行規則是？","左側失敗，才執行右側",["左側成功，才執行右側","不論成敗都執行右側","同時執行左右兩側"],"例如 `cat missing.txt || echo '讀取失敗'`。"],
+  [5,"執行 `mkdir demo && cd demo`，若 `mkdir demo` 失敗（例如已存在），`cd demo` 會？","不會執行",["仍然會執行","會自動重建 demo","會顯示 Permission denied"],"`&&` 只有在左側成功時才執行右側。"],
+  [5,"執行 `cat missing.txt || echo '讀取失敗'`，若 missing.txt 不存在，會？","先顯示 cat 的錯誤，再輸出「讀取失敗」",["不顯示任何訊息","只輸出「讀取失敗」，不顯示 cat 的錯誤","直接刪除 missing.txt"],"cat 失敗（非 0），所以執行 `||` 右側。錯誤訊息屬於 STDERR，仍會顯示。"],
+  [5,"`touch file{1..3}.txt` 會建立哪些檔案？","`file1.txt`、`file2.txt`、`file3.txt`",["`file{1..3}.txt` 單一檔案","`file1..3.txt`","`file.txt` 三份"],"大括號會先展開成多個文字，再執行指令。"],
+  [5,"大括號展開 `{1..3}` 是由誰先處理？","Shell 先展開成多個文字，再執行指令",["touch 自己展開","檔案系統展開","核心展開"],"和萬用字元一樣，由 Shell 在執行前展開。"],
+  [5,"下列哪個指令可以一次刪除前面建立的 `file1.txt`～`file3.txt`？","`rm file{1..3}.txt`",["`rm file[1..3].txt`","`rm file(1-3).txt`","`rm file{1,3}.txt`"],"`file{1,3}` 只會展開成 file1.txt 與 file3.txt。"],
+  [5,"Bash 通常把指令歷史儲存在哪裡？","`~/.bash_history`",["`/etc/passwd`","`~/.profile`","`/dev/null`"],"結束 Shell 時通常寫入。"],
+  [5,"`history -w` 的作用是？","把目前歷史寫回歷史檔",["刪除歷史檔","清除記憶體中的歷史","顯示目前歷史"],"搭配 `history -c` 可清空歷史檔。"],
+  [5,"若要清空目前 Bash 的歷史檔，講義建議依序執行？","`history -c` 與 `history -w`",["`history -w` 與 `history -c`","`history -d` 與 `history -w`","`rm history` 與 `exit`"],"先清記憶體，再寫回歷史檔。"],
+  [5,"為什麼不能把「清除歷史紀錄」當成保密方法？","其他同時開著的 Terminal 之後仍可能把自己的歷史寫回；而且已外洩的密碼仍須更換",["因為 history 無法被清除","因為清除歷史會讓密碼自動外洩","因為歷史只存在於 root"],"敏感資料不應直接寫在命令列，也不應只依賴刪除 history。"],
+  [5,"在命令列直接寫入密碼，風險不包含下列哪一項？","它會自動讓所有使用者都得到管理權限",["可能留在歷史紀錄","可能出現在程序資訊","可能被錄影畫面拍到"],"講義提到歷史紀錄、程序資訊與錄影畫面等風險。"],
+  [5,"依本章小結，各符號的用途對應正確的是？","Pipe 與 grep 做文字處理；`sudo tee` 處理需權限的寫入；`&&` 與 `||` 依離開狀態控制下一個指令",["Pipe 管理背景工作；`&&` 處理檔案權限","`sudo tee` 做文字搜尋；`grep` 管理工作","`&` 控制離開狀態；`||` 建立檔案"],"`&`、`jobs`、`bg`、`fg` 則是管理目前 Shell 的工作。"]
+  ];
+
+  /* ---------- helpers ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function fmt(s) { return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  var KEY = "linuxquiz.wrongbook.v1";
+  var wrongBook = [];
+  try { wrongBook = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { wrongBook = []; }
+  function saveWrong() { try { localStorage.setItem(KEY, JSON.stringify(wrongBook)); } catch (e) {} }
+
+  var counts = [0, 0, 0, 0, 0, 0];
+  Q.forEach(function (q) { counts[q[0]]++; });
+
+  var S = { pool: [], i: 0, score: 0, done: false, missed: [], lastCount: 10, wrongMode: false };
+
+  /* ---------- home ---------- */
+  var chipsEl = $("chips");
+  CH.forEach(function (name, k) {
+    var n = k + 1;
+    var l = document.createElement("label");
+    l.className = "chip";
+    l.innerHTML = '<input type="checkbox" id="ch' + n + '" value="' + n + '" checked><span><b>第 ' + n + ' 章　' + esc(name) + '</b><i>' + counts[n] + ' 題</i></span>';
+    chipsEl.appendChild(l);
+  });
+  var segsEl = $("segs");
+  [["10", "10 題"], ["20", "20 題"], ["30", "30 題"], ["all", "全部"]].forEach(function (p, k) {
+    var l = document.createElement("label");
+    l.className = "seg";
+    l.innerHTML = '<input type="radio" name="cnt" id="cnt' + k + '" value="' + p[0] + '"' + (k === 1 ? " checked" : "") + '><span>' + p[1] + '</span>';
+    segsEl.appendChild(l);
+  });
+  $("lede").textContent = "題庫共 " + Q.length + " 題，整理自五份 Ubuntu 22.04 講義。每次練習都隨機抽題、打亂選項，答完立刻看解析。";
+
+  function selectedChapters() {
+    var r = [];
+    for (var n = 1; n <= 5; n++) if ($("ch" + n).checked) r.push(n);
+    return r;
+  }
+  function selectedCount() {
+    var v = document.querySelector('input[name="cnt"]:checked').value;
+    return v === "all" ? Infinity : parseInt(v, 10);
+  }
+  function refreshHome() {
+    $("go").disabled = selectedChapters().length === 0;
+    var wb = $("goWrong");
+    wb.hidden = wrongBook.length === 0;
+    wb.textContent = "練習錯題本（" + wrongBook.length + " 題）";
+  }
+  chipsEl.addEventListener("change", refreshHome);
+
+  function show(id) {
+    ["v-home", "v-quiz", "v-result"].forEach(function (v) { $(v).hidden = v !== id; });
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- quiz flow ---------- */
+  function begin(ids, wrongMode) {
+    S.pool = shuffle(ids).map(function (id) {
+      var q = Q[id];
+      var opts = shuffle([{ t: q[2], ok: true }].concat(q[3].map(function (w) { return { t: w, ok: false }; })));
+      return { id: id, q: q[1], opts: opts, exp: q[4], ch: q[0] };
+    });
+    S.i = 0; S.score = 0; S.missed = []; S.wrongMode = !!wrongMode;
+    show("v-quiz");
+    renderQ();
+  }
+  function startRandom() {
+    var chs = selectedChapters();
+    var ids = [];
+    Q.forEach(function (q, id) { if (chs.indexOf(q[0]) >= 0) ids.push(id); });
+    var n = selectedCount();
+    S.lastCount = n;
+    ids = shuffle(ids).slice(0, Math.min(n, ids.length));
+    begin(ids, false);
+  }
+
+  var LETTERS = ["A", "B", "C", "D"];
+  function renderQ() {
+    var p = S.pool[S.i];
+    S.done = false;
+    $("pos").textContent = "第 " + (S.i + 1) + " / " + S.pool.length + " 題";
+    $("sc").textContent = "答對 " + S.score;
+    $("prog").style.width = (S.i / S.pool.length * 100) + "%";
+    $("qtag").textContent = "第 " + p.ch + " 章 · " + CH[p.ch - 1];
+    $("qtext").innerHTML = fmt(p.q);
+    var o = $("opts");
+    o.innerHTML = "";
+    p.opts.forEach(function (op, k) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.innerHTML = '<span class="k">' + LETTERS[k] + '</span><span class="t">' + fmt(op.t) + '</span>';
+      b.addEventListener("click", function () { answer(k); });
+      o.appendChild(b);
+    });
+    $("exp").hidden = true;
+    $("next").hidden = true;
+  }
+  function answer(k) {
+    if (S.done) return;
+    S.done = true;
+    var p = S.pool[S.i];
+    var ok = p.opts[k].ok;
+    var btns = $("opts").children;
+    for (var j = 0; j < btns.length; j++) {
+      var b = btns[j];
+      b.disabled = true;
+      var t = b.querySelector(".t");
+      if (p.opts[j].ok) { b.classList.add("right"); t.insertAdjacentHTML("beforeend", "<small>✓ 正確答案</small>"); }
+      else if (j === k) { b.classList.add("wrong"); t.insertAdjacentHTML("beforeend", "<small>✗ 你的答案</small>"); }
+      else b.classList.add("dim");
+    }
+    if (ok) {
+      S.score++;
+      var at = wrongBook.indexOf(p.id);
+      if (at >= 0) { wrongBook.splice(at, 1); saveWrong(); }
+    } else {
+      S.missed.push({ p: p, picked: p.opts[k].t });
+      if (wrongBook.indexOf(p.id) < 0) { wrongBook.push(p.id); saveWrong(); }
+    }
+    $("sc").textContent = "答對 " + S.score;
+    $("prog").style.width = ((S.i + 1) / S.pool.length * 100) + "%";
+    var e = $("exp");
+    e.className = "explain " + (ok ? "ok" : "no");
+    e.innerHTML = "<strong>" + (ok ? "答對了" : "答錯了") + "</strong>" + fmt(p.exp);
+    e.hidden = false;
+    var nx = $("next");
+    nx.textContent = S.i + 1 < S.pool.length ? "下一題" : "查看結果";
+    nx.hidden = false;
+    nx.focus({ preventScroll: true });
+  }
+  function nextQ() {
+    if (!S.done) return;
+    if (S.i + 1 < S.pool.length) { S.i++; renderQ(); window.scrollTo(0, 0); }
+    else finish();
+  }
+
+  /* ---------- result ---------- */
+  function finish() {
+    var total = S.pool.length;
+    var pct = Math.round(S.score / total * 100);
+    $("rscore").textContent = S.score + " / " + total;
+    $("rpct").textContent = "答對率 " + pct + "%";
+    $("rmsg").textContent = pct === 100 ? "全部答對，可以換一批題目再練一次。"
+      : pct >= 80 ? "掌握得不錯，看看下面答錯的題目補強即可。"
+      : pct >= 60 ? "有基礎了，建議把答錯的題目對照講義再讀一次。"
+      : "還需要加強，先看下面的解析，再重做錯題。";
+    var rv = $("review");
+    rv.innerHTML = "";
+    S.missed.forEach(function (m) {
+      var d = document.createElement("div");
+      d.className = "rv";
+      var right = m.p.opts.filter(function (o) { return o.ok; })[0].t;
+      d.innerHTML = '<div class="label">第 ' + m.p.ch + ' 章 · ' + esc(CH[m.p.ch - 1]) + '</div>' +
+        '<div class="q">' + fmt(m.p.q) + '</div>' +
+        '<div class="a"><span class="bad">✗ 你的答案：</span>' + fmt(m.picked) + '</div>' +
+        '<div class="a"><span class="good">✓ 正確答案：</span>' + fmt(right) + '</div>' +
+        '<div class="e">' + fmt(m.p.exp) + '</div>';
+      rv.appendChild(d);
+    });
+    $("rvbox").hidden = S.missed.length === 0;
+    $("retryWrong").hidden = S.missed.length === 0;
+    $("again").textContent = S.wrongMode ? "回到隨機練習" : "再抽一輪";
+    show("v-result");
+  }
+
+  /* ---------- wiring ---------- */
+  $("go").addEventListener("click", startRandom);
+  $("goWrong").addEventListener("click", function () { begin(wrongBook.slice(), true); });
+  $("next").addEventListener("click", nextQ);
+  $("quit").addEventListener("click", function () { refreshHome(); show("v-home"); });
+  $("home").addEventListener("click", function () { refreshHome(); show("v-home"); });
+  $("again").addEventListener("click", function () {
+    if (S.wrongMode) { refreshHome(); show("v-home"); } else startRandom();
+  });
+  $("retryWrong").addEventListener("click", function () {
+    begin(S.missed.map(function (m) { return m.p.id; }), false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if ($("v-quiz").hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key.toLowerCase();
+    var idx = "1234".indexOf(k);
+    if (idx < 0) idx = "abcd".indexOf(k);
+    if (idx >= 0 && idx < S.pool[S.i].opts.length && !S.done) { answer(idx); e.preventDefault(); return; }
+    if ((e.key === "Enter" || e.key === "ArrowRight") && S.done) { nextQ(); e.preventDefault(); }
+  });
+
+  refreshHome();
+  show("v-home");
+})();
+</script>
+
+</body></html>
